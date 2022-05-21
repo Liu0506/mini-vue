@@ -6,8 +6,9 @@ let activeEffect;
 class ReactiveEffect {
   private _fn: any;
 
-  constructor(fn) {
+  constructor(fn, public scheduler?) {
     this._fn = fn;
+    this.scheduler = scheduler;
   }
 
   run() {
@@ -38,12 +39,16 @@ export function trigger(target, key) {
   const deps = depsMap.get(key);
 
   for (const effect of deps) {
-    effect.run();
+    if (effect.scheduler) {
+      effect.scheduler();
+    } else {
+      effect.run();
+    }
   }
 }
 
-export function effect(fn) {
-  const _effect = new ReactiveEffect(fn);
+export function effect(fn, options: any = {}) {
+  const _effect = new ReactiveEffect(fn, options.scheduler);
   _effect.run();
 
   // 把 _effect.run 这个方法返回
@@ -52,4 +57,3 @@ export function effect(fn) {
   runner.effect = _effect;
   return runner;
 }
-
