@@ -1,4 +1,4 @@
-import { effect } from "../effect";
+import { effect, stop } from "../effect";
 import { reactive } from "../reactive";
 
 describe("effect", () => {
@@ -52,5 +52,33 @@ describe("effect", () => {
     run();
     // should have run
     expect(dummy).toBe(2);
+  });
+
+  it("effect/stop", () => {
+    let dummy, dummy2;
+    const onStop = () => {
+      dummy2 = "onStop";
+    };
+    const obj = reactive({ prop: 1 });
+    const runner = effect(
+      () => {
+        dummy = obj.prop;
+      },
+      {
+        onStop,
+      }
+    );
+    obj.prop = 2;
+    expect(obj.prop).toBe(2);
+    stop(runner);
+    obj.prop = 3;
+    expect(dummy).toBe(2);
+
+    runner();
+    // stop 执行后，可以手动运行 runner 函数
+    expect(dummy).toBe(3);
+
+    // 检验 onStop 是否触发
+    expect(dummy2).toBe("onStop");
   });
 });

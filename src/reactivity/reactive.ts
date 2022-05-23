@@ -14,7 +14,7 @@ export function reactive(raw) {
       const res = Reflect.set(target, key, value);
 
       // 依赖触发
-      trigger(target, key)
+      trigger(target, key);
       return res;
     },
   });
