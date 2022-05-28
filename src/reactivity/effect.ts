@@ -2,6 +2,7 @@ import { extend } from "../shared";
 
 let targetMap = new WeakMap();
 let activeEffect;
+let shouldTrack;
 /**
  * 收集依赖
  */
@@ -17,8 +18,18 @@ class ReactiveEffect {
   }
 
   run() {
+    if (!this.active) {
+      return this._fn();
+    }
+
+    // this._fn(); 操作中，又可能要收集依赖，所以要先设置成 true
+    shouldTrack = true;
     activeEffect = this;
-    return this._fn();
+
+    const result = this._fn();
+    // reset
+    shouldTrack = false;
+    return result;
   }
 
   stop() {
@@ -33,6 +44,9 @@ class ReactiveEffect {
 }
 
 export function track(target, key) {
+  // 防止添加 undefined 和 stop后继续收集依赖
+  if (!activeEffect || !shouldTrack) return;
+
   let depsMap = targetMap.get(target);
   if (!depsMap) {
     depsMap = new Map();
@@ -45,8 +59,8 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
-  // 防止添加 undefined 和重复的数据
-  if (!activeEffect || dep.has(activeEffect)) return;
+  if (dep.has(activeEffect)) return;
+
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
 }
@@ -85,4 +99,5 @@ function cleanupEffect(effect) {
   effect.deps.forEach((dep: any) => {
     dep.delete(effect);
   });
+  effect.deps.length = 0;
 }

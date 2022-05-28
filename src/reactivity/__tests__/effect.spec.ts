@@ -71,7 +71,11 @@ describe("effect", () => {
     obj.prop = 2;
     expect(obj.prop).toBe(2);
     stop(runner);
-    obj.prop = 3;
+    obj.prop++;
+    // 相当于 obj.prop = obj.prop + 1
+    // 先执行了 obj.prop 的 get，又进行了依赖收集（相当于stop的操作无效了）
+    // 然后 set 操作触发新收集的依赖，导致测试失败。
+    // 处理这个问题，可以添加 shouldTrack 来判断是否需要收集依赖。
     expect(dummy).toBe(2);
 
     runner();
