@@ -1,5 +1,6 @@
+import { isObject } from "../shared";
 import { track, trigger } from "./effect";
-import { ReactiveFlags } from "./reactive";
+import { reactive, ReactiveFlags, readonly } from "./reactive";
 
 const get = createGetter();
 const set = createSetting();
@@ -20,6 +21,15 @@ function createGetter(isReadonly = false) {
     if (!isReadonly) {
       track(target, key);
     }
+
+    if (isObject(res)) {
+      // // 用来打断点，测试数组的每一项改变，会不会触发依赖收集
+      // if (JSON.stringify(res) === JSON.stringify([1, 3, 5])) {
+      //   res;
+      // }
+      return isReadonly ? readonly(res) : reactive(res);
+    }
+
     return res;
   };
 }

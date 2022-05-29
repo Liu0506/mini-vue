@@ -68,6 +68,8 @@ export function track(target, key) {
 export function trigger(target, key) {
   // 获取所有依赖
   const depsMap = targetMap.get(target);
+  if (!depsMap) return;
+  
   const deps = depsMap.get(key);
 
   for (const effect of deps) {
