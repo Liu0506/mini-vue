@@ -1,4 +1,4 @@
-import { isReactive, isReadonly, reactive, readonly } from "../reactive";
+import { isProxy, isReactive, isReadonly, reactive, readonly } from "../reactive";
 
 describe("reactive", () => {
   it("reactive fn", () => {
@@ -8,6 +8,8 @@ describe("reactive", () => {
     expect(observed.foo).toBe(1);
     expect(isReactive(observed)).toBe(true);
     expect(isReactive(original)).toBe(false);
+    expect(isProxy(original)).toBe(false);
+    expect(isProxy(observed)).toBe(true);
   });
 
   it("reactive/deep", () => {

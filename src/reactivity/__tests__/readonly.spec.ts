@@ -1,4 +1,4 @@
-import { isReactive, isReadonly, reactive, readonly } from "../reactive";
+import { isProxy, isReactive, isReadonly, reactive, readonly } from "../reactive";
 
 describe("readonly", () => {
   it("readonly fn", () => {
@@ -8,6 +8,8 @@ describe("readonly", () => {
     expect(original).not.toBe(obj);
     obj.foo++;
     expect(obj.foo).toBe(1);
+    expect(isProxy(original)).toBe(false);
+    expect(isProxy(obj)).toBe(true);
   });
 
   it("readonly warn", () => {
