@@ -45,7 +45,8 @@ class ReactiveEffect {
 
 export function track(target, key) {
   // 防止添加 undefined 和 stop后继续收集依赖
-  if (!activeEffect || !shouldTrack) return;
+  // if (!activeEffect || !shouldTrack) return;
+  if (!isTracking()) return;
 
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -59,6 +60,10 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
+  trackEffects(dep);
+}
+
+export function trackEffects(dep) {
   if (dep.has(activeEffect)) return;
 
   dep.add(activeEffect);
@@ -69,16 +74,24 @@ export function trigger(target, key) {
   // 获取所有依赖
   const depsMap = targetMap.get(target);
   if (!depsMap) return;
-  
-  const deps = depsMap.get(key);
 
-  for (const effect of deps) {
+  const dep = depsMap.get(key);
+
+  triggerEffects(dep);
+}
+
+export function triggerEffects(dep) {
+  for (const effect of dep) {
     if (effect.scheduler) {
       effect.scheduler();
     } else {
       effect.run();
     }
   }
+}
+
+export function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
 }
 
 export function stop(runner) {

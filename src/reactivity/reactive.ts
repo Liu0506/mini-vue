@@ -5,8 +5,8 @@ import {
 } from "./baseHandlers";
 
 export const enum ReactiveFlags {
-  IS_REACTIVE = "__is_reactive",
-  IS_READONLY = "__is_readonly",
+  IS_REACTIVE = "__v_is_reactive",
+  IS_READONLY = "__v_is_readonly",
 }
 
 export function reactive<T extends object>(raw: T) {
