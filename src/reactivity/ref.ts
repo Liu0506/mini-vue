@@ -11,9 +11,11 @@ function createRef(rawValue: unknown) {
 }
 
 class RefImpl {
-  public dep;
   private _value: any;
   private _rawValue: any;
+
+  public dep;
+  public readonly __v_isRef = true;
 
   constructor(value) {
     this._rawValue = value;
@@ -47,4 +49,12 @@ function trackRefValue(ref) {
  */
 function conver(value) {
   return isObject(value) ? reactive(value) : value;
+}
+
+export function isRef(ref) {
+  return !!(ref && ref.__v_isRef === true);
+}
+
+export function unRef(ref) {
+  return isRef(ref) ? ref.value : ref;
 }
