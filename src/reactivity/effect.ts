@@ -6,7 +6,7 @@ let shouldTrack;
 /**
  * 收集依赖
  */
-class ReactiveEffect {
+export class ReactiveEffect {
   private _fn: any;
   active = true;
   deps: any[] = [];
