@@ -7,8 +7,12 @@ export function render(vnode, container) {
 
 function patch(vnode, container) {
   // 去处理组件
-
-  processComponent(vnode, container);
+  // 判断 vnode 是不是一个 element
+  if (typeof vnode.type === "string") {
+    // processElement();
+  } else {
+    processComponent(vnode, container);
+  }
 }
 
 function processComponent(vnode: any, container: any) {
