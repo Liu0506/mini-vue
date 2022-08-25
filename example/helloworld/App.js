@@ -2,7 +2,7 @@ import { h } from "../../lib/guide-mini-vue.esm.js";
 
 export const App = {
   render() {
-    window.self = this
+    window.self = this;
     return h(
       "div",
       { id: "root", style: "color: red" },
