@@ -36,10 +36,13 @@ function mountElement(vnode, container) {
     mountChildren(children, el);
   }
 
-  for (const propsKey in props) {
-    if (props.hasOwnProperty(propsKey)) {
-      const val = props[propsKey];
-      el.setAttribute(propsKey, val);
+  for (const key in props) {
+    const val = props[key];
+    const isOn = /^on[A-Z]/.test(key);
+    if (isOn) {
+      el.addEventListener(key.slice(2).toLowerCase(), val);
+    } else {
+      el.setAttribute(key, val);
     }
   }
   container.append(el);

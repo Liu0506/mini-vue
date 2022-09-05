@@ -5,7 +5,16 @@ export const App = {
     window.self = this;
     return h(
       "div",
-      { id: "root", style: "color: red" },
+      {
+        id: "root",
+        style: "color: red",
+        onClick() {
+          console.log("onClick");
+        },
+        onMousedown() {
+          console.log("onMousedown");
+        },
+      },
       // "hi! mini-vue!",
       "hi! mini-vue!" + this.msg
       // [
