@@ -1,19 +1,19 @@
-import { h } from "../../lib/guide-mini-vue.esm.js";
+import { h, renderSlots } from "../../lib/guide-mini-vue.esm.js";
 
 export const Foo = {
   name: "Foo",
-  setup(props, { emit }) {
-    const emitAdd = () => {
-      emit("add", "data", "data2");
-      return;
-    };
-    return {
-      emitAdd,
-    };
+  setup() {
+    return {};
   },
   render() {
-    const Btn = h("button", { onClick: this.emitAdd }, "emitAdd");
-    const Foo = h("p", {}, "Foo");
-    return h("div", {}, [Foo, Btn]);
+    const foo = h("p", {}, "foo");
+    const hdText = "--start--";
+    const ftText = "-- end --";
+    return h("div", {}, [
+      renderSlots(this.$slots, "header", hdText),
+      renderSlots(this.$slots, "default"),
+      foo,
+      renderSlots(this.$slots, "footer", ftText),
+    ]);
   },
 };

@@ -1,5 +1,6 @@
 const publicPropertiesMap = {
   $el: (instance) => Reflect.get(instance.vnode, "el"),
+  $slots: (instance) => Reflect.get(instance, "slots"),
 };
 
 export const PublicInstanceProxyHandlers = {
