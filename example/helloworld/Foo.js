@@ -1,12 +1,19 @@
 import { h } from "../../lib/guide-mini-vue.esm.js";
 
 export const Foo = {
-  setup(props) {
-    console.log(props);
-
-    props.count++;
+  name: "Foo",
+  setup(props, { emit }) {
+    const emitAdd = () => {
+      emit("add", "data", "data2");
+      return;
+    };
+    return {
+      emitAdd,
+    };
   },
   render() {
-    return h("div", {}, "Foo: " + this.count);
+    const Btn = h("button", { onClick: this.emitAdd }, "emitAdd");
+    const Foo = h("p", {}, "Foo");
+    return h("div", {}, [Foo, Btn]);
   },
 };
