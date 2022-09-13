@@ -21,7 +21,7 @@ function patch(vnode, container) {
     default:
       if (shapeFlag & ShapeFlags.ELEMENT) {
         processElement(vnode, container);
-      } else {
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
         processComponent(vnode, container);
       }
       break;
