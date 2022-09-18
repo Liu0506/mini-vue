@@ -1,29 +1,58 @@
-import {
-  h,
-  createTextVNode,
-  getCurrentInstance,
-} from "../../lib/guide-mini-vue.esm.js";
-import { Foo } from "./Foo.js";
+import { h, inject, provide } from "../../lib/guide-mini-vue.esm.js";
 
-export const App = {
-  name: "App",
-  render() {
-    const app = h("div", {}, "App");
-    const foo = h(
-      Foo,
-      {},
-      {
-        default: () => [h("main", {}, "content"), createTextVNode("纯文本")],
-        header: (text) => h("p", {}, "头部" + text),
-        footer: (text) => h("p", {}, "尾部" + text),
-      }
-    );
-
-    return h("div", {}, [app, foo]);
-  },
+const Provider = {
+  name: "Provider",
   setup() {
-    const instance = getCurrentInstance();
-    console.log("instance :>> ", instance);
-    return {};
+    provide("foo", "fooVal");
+    provide("bar", "barVal");
+  },
+  render() {
+    return h("div", {}, [h("p", {}, "Provider"), h(ProviderTwo)]);
+  },
+};
+
+const ProviderTwo = {
+  name: "ProviderTwo",
+  setup() {
+    provide("foo", "fooTwo");
+    const foo = inject("foo");
+
+    return {
+      foo,
+    };
+  },
+  render() {
+    return h("div", {}, [
+      h("p", {}, `ProviderTwo foo:${this.foo}`),
+      h(Consumer),
+    ]);
+  },
+};
+
+const Consumer = {
+  name: "Consumer",
+  setup() {
+    const foo = inject("foo");
+    const bar = inject("bar");
+    // const baz = inject("baz", "bazDefault");
+    const baz = inject("baz", () => "bazDefault");
+
+    return {
+      foo,
+      bar,
+      baz,
+    };
+  },
+
+  render() {
+    return h("div", {}, `Consumer: - ${this.foo} - ${this.bar} - ${this.baz}`);
+  },
+};
+
+export default {
+  name: "App",
+  setup() {},
+  render() {
+    return h("div", {}, [h("p", {}, "apiInject"), h(Provider)]);
   },
 };
