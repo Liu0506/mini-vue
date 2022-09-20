@@ -88,6 +88,9 @@ export function proxyRefs(objectWithRefs) {
   // ref 中的 reactive 已处理，reactive 中的 ref 未处理，
   // 后续会在 reactive中，判断 ref 类型，进行特殊处理
   // 现在先不添加
+  console.log(isReactive(objectWithRefs));
+  console.log(objectWithRefs);
+  console.log(shallowUnwrapHandlers);
   return isReactive(objectWithRefs)
     ? objectWithRefs
     : new Proxy(objectWithRefs, shallowUnwrapHandlers);

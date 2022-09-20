@@ -1,3 +1,4 @@
+import { effect } from "../reactivity/effect";
 import { ShapeFlags } from "../shared/shapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { createAppApi } from "./createApp";
@@ -8,32 +9,43 @@ export function createRenderer(options) {
 
   function render(vnode, container) {
     // patch
-    patch(vnode, container, null);
+    patch(null, vnode, container, null);
   }
 
-  function patch(vnode, container, parentComponent) {
+  function patch(n1, n2, container, parentComponent) {
     // 去处理组件
-    // 判断 vnode 是不是一个 element
-    const { shapeFlag, type } = vnode;
+    // 判断 n2 是不是一个 element
+    const { shapeFlag, type } = n2;
     switch (type) {
       case Fragment:
-        processFragment(vnode, container, parentComponent);
+        processFragment(n1, n2, container, parentComponent);
         break;
       case Text:
-        processText(vnode, container);
+        processText(n1, n2, container);
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(vnode, container, parentComponent);
+          processElement(n1, n2, container, parentComponent);
         } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(vnode, container, parentComponent);
+          processComponent(n1, n2, container, parentComponent);
         }
         break;
     }
   }
 
-  function processElement(vnode, container, parentComponent) {
-    mountElement(vnode, container, parentComponent);
+  function processElement(n1, n2, container, parentComponent) {
+    if (!n1) {
+      mountElement(n2, container, parentComponent);
+    } else {
+      patchElement(n1, n2, container);
+    }
+  }
+
+  function patchElement(n1, n2, container) {
+    console.log("patchElement");
+    console.log("container :>> ", container);
+    console.log("n1", n1);
+    console.log("n2", n2);
   }
 
   function mountElement(vnode, container, parentComponent) {
@@ -66,12 +78,12 @@ export function createRenderer(options) {
 
   function mountChildren(vnode: any, el: any, parentComponent) {
     for (const child of vnode.children) {
-      patch(child, el, parentComponent);
+      patch(null, child, el, parentComponent);
     }
   }
 
-  function processComponent(vnode: any, container: any, parentComponent) {
-    mountComponent(vnode, container, parentComponent);
+  function processComponent(n1, n2: any, container: any, parentComponent) {
+    mountComponent(n2, container, parentComponent);
   }
 
   function mountComponent(initnalVnode, container, parentComponent) {
@@ -83,22 +95,37 @@ export function createRenderer(options) {
   }
 
   function setupRenderEffect(instance, initnalVnode, container) {
-    const { proxy } = instance;
-    const subTree = instance.render.call(proxy);
+    effect(() => {
+      if (!instance.isMounted) {
+        console.log("初始化");
+        const { proxy } = instance;
+        const subTree = instance.render.call(proxy);
 
-    // vnode -> patch
-    // vnode -> element -> mountElement
-    patch(subTree, container, instance);
-    initnalVnode.el = subTree.el;
+        // vnode -> patch
+        // vnode -> element -> mountElement
+        patch(null, subTree, container, instance);
+        initnalVnode.el = subTree.el;
+        instance.isMounted = true;
+      } else {
+        console.log("更新");
+        const { proxy } = instance;
+        const subTree = instance.render.call(proxy);
+        const prevSubTree = instance.subTree;
+        instance.subTree = subTree;
+        
+        // vnode -> patch
+        // vnode -> element -> mountElement
+        patch(prevSubTree, subTree, container, instance);
+      }
+    });
   }
 
-  function processFragment(vnode: any, container: any, parentComponent) {
-    const { children } = vnode;
-    mountChildren(children, container, parentComponent);
+  function processFragment(n1, n2: any, container: any, parentComponent) {
+    mountChildren(n2, container, parentComponent);
   }
-  function processText(vnode: any, container: HTMLElement) {
-    const { children } = vnode;
-    const textNode = (vnode.el = document.createTextNode(children));
+  function processText(n1, n2: any, container: HTMLElement) {
+    const { children } = n2;
+    const textNode = (n2.el = document.createTextNode(children));
     container.append(textNode);
   }
 
