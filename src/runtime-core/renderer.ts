@@ -1,11 +1,16 @@
 import { effect } from "../reactivity/effect";
+import { EMPTY_OBJ } from "../shared";
 import { ShapeFlags } from "../shared/shapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { createAppApi } from "./createApp";
 import { Fragment, Text } from "./vnode";
 
 export function createRenderer(options) {
-  const { createElement, patchProp, insert } = options;
+  const {
+    createElement: hostCreateElement,
+    patchProp: hostPatchProp,
+    insert: hostInsert,
+  } = options;
 
   function render(vnode, container) {
     // patch
@@ -44,12 +49,36 @@ export function createRenderer(options) {
   function patchElement(n1, n2, container) {
     console.log("patchElement");
     console.log("container :>> ", container);
+    // 对比 props
+    const oldProps = n1.props || EMPTY_OBJ;
+    const newProps = n2.props || EMPTY_OBJ;
+    const el = (n2.el = n1.el);
     console.log("n1", n1);
     console.log("n2", n2);
+    patchProps(el, oldProps, newProps);
+  }
+
+  function patchProps(el, oldProps, newProps) {
+    for (const key in newProps) {
+      const prevProp = oldProps[key];
+      const nextProp = newProps[key];
+      if (prevProp !== nextProp) {
+        // 触发更新 prop
+        hostPatchProp(el, key, prevProp, nextProp);
+      }
+      if (oldProps !== EMPTY_OBJ) {
+        for (const key in oldProps) {
+          if (!(key in newProps)) {
+            const prevProp = oldProps[key];
+            hostPatchProp(el, key, prevProp, null);
+          }
+        }
+      }
+    }
   }
 
   function mountElement(vnode, container, parentComponent) {
-    const el = (vnode.el = createElement(vnode.type));
+    const el = (vnode.el = hostCreateElement(vnode.type));
 
     const { props, children, shapeFlag } = vnode;
 
@@ -64,7 +93,7 @@ export function createRenderer(options) {
 
     for (const key in props) {
       const val = props[key];
-      patchProp(el, key, val);
+      hostPatchProp(el, key, null, val);
       // const isOn = /^on[A-Z]/.test(key);
       // if (isOn) {
       //   el.addEventListener(key.slice(2).toLowerCase(), val);
@@ -73,7 +102,7 @@ export function createRenderer(options) {
       // }
     }
     // container.append(el);
-    insert(el, container);
+    hostInsert(el, container);
   }
 
   function mountChildren(vnode: any, el: any, parentComponent) {
@@ -98,8 +127,10 @@ export function createRenderer(options) {
     effect(() => {
       if (!instance.isMounted) {
         console.log("初始化");
+
         const { proxy } = instance;
         const subTree = instance.render.call(proxy);
+        instance.subTree = subTree;
 
         // vnode -> patch
         // vnode -> element -> mountElement
@@ -108,11 +139,12 @@ export function createRenderer(options) {
         instance.isMounted = true;
       } else {
         console.log("更新");
+
         const { proxy } = instance;
         const subTree = instance.render.call(proxy);
         const prevSubTree = instance.subTree;
         instance.subTree = subTree;
-        
+
         // vnode -> patch
         // vnode -> element -> mountElement
         patch(prevSubTree, subTree, container, instance);
