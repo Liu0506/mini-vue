@@ -23,7 +23,7 @@ export default {
       h(TextToArray),
       //   // 老的是 array 新的是 array
       h('h2', {}, 'ArrayToArray'),
-      //   h(ArrayToArray),
+      h(ArrayToArray),
     ]);
   },
 };

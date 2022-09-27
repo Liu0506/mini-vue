@@ -78,9 +78,13 @@ export function createRenderer(options: createRendererIterFace) {
         hostSetElementText(container, c2);
       }
     } else {
-      // to Array
+      // Text to Array
       if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
         hostSetElementText(container, "");
+        mountChildren(c2, container, parentComponent)
+      } else {
+        // Array to Array ：后续需要改成双端算法
+        unmountChildren(n1.children);
         mountChildren(c2, container, parentComponent)
       }
     }
