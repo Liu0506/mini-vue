@@ -1,0 +1,26 @@
+// 新的是 text
+// 老的是 text
+
+import { ref, h } from "../../lib/guide-mini-vue.esm.js";
+
+const prevChildren = "oldChild";
+const nextChildren = "newChild";
+
+export default {
+  name: "TextToText",
+  setup() {
+    const isChange = ref(false);
+    window.isChange2 = isChange;
+
+    return {
+      isChange,
+    };
+  },
+  render() {
+    const self = this;
+
+    return self.isChange
+      ? h("div", {}, nextChildren)
+      : h("div", {}, prevChildren);
+  },
+};

@@ -1,15 +1,18 @@
 import { effect } from "../reactivity/effect";
+import { createRendererIterFace } from "../runtime-dom";
 import { EMPTY_OBJ } from "../shared";
 import { ShapeFlags } from "../shared/shapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { createAppApi } from "./createApp";
 import { Fragment, Text } from "./vnode";
 
-export function createRenderer(options) {
+export function createRenderer(options: createRendererIterFace) {
   const {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     insert: hostInsert,
+    remove: hostRemove,
+    setElementText: hostSetElementText,
   } = options;
 
   function render(vnode, container) {
@@ -42,11 +45,11 @@ export function createRenderer(options) {
     if (!n1) {
       mountElement(n2, container, parentComponent);
     } else {
-      patchElement(n1, n2, container);
+      patchElement(n1, n2, container, parentComponent);
     }
   }
 
-  function patchElement(n1, n2, container) {
+  function patchElement(n1, n2, container, parentComponent) {
     console.log("patchElement");
     console.log("container :>> ", container);
     // 对比 props
@@ -55,7 +58,39 @@ export function createRenderer(options) {
     const el = (n2.el = n1.el);
     console.log("n1", n1);
     console.log("n2", n2);
+    patchChildren(n1, n2, el, parentComponent);
     patchProps(el, oldProps, newProps);
+  }
+
+  function patchChildren(n1, n2, container, parentComponent) {
+    const prevShapeFlag = n1.shapeFlag;
+    const c1 = n1.children;
+    const shapeFlag = n2.shapeFlag;
+    const c2 = n2.children;
+
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // to Text
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // Array to Text：解除挂载元素
+        unmountChildren(n1.children);
+      }
+      if (c1 !== c2) {
+        hostSetElementText(container, c2);
+      }
+    } else {
+      // to Array
+      if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        hostSetElementText(container, "");
+        mountChildren(c2, container, parentComponent)
+      }
+    }
+  }
+
+  function unmountChildren(children: any[]) {
+    for (let i = 0; i < children.length; i++) {
+      const element = children[i];
+      hostRemove(element.el);
+    }
   }
 
   function patchProps(el, oldProps, newProps) {
@@ -88,7 +123,7 @@ export function createRenderer(options) {
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       // array_children
       // 绑定子元素
-      mountChildren(vnode, el, parentComponent);
+      mountChildren(vnode.children, el, parentComponent);
     }
 
     for (const key in props) {
@@ -105,8 +140,8 @@ export function createRenderer(options) {
     hostInsert(el, container);
   }
 
-  function mountChildren(vnode: any, el: any, parentComponent) {
-    for (const child of vnode.children) {
+  function mountChildren(children, el: any, parentComponent) {
+    for (const child of children) {
       patch(null, child, el, parentComponent);
     }
   }
@@ -153,7 +188,7 @@ export function createRenderer(options) {
   }
 
   function processFragment(n1, n2: any, container: any, parentComponent) {
-    mountChildren(n2, container, parentComponent);
+    mountChildren(n2.children, container, parentComponent);
   }
   function processText(n1, n2: any, container: HTMLElement) {
     const { children } = n2;
