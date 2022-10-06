@@ -10,19 +10,19 @@ export default {
   setup() {},
 
   render() {
-    return h("div", { tId: 1 }, [
+    return h("div", {}, [
       h("p", {}, "主页"),
       // 老的是 array 新的是 text
-      h('h2', {}, 'ArrayToText'),
+      h("h2", {}, "ArrayToText"),
       h(ArrayToText),
       // 老的是 text 新的是 text
-      h('h2', {}, 'TextToText'),
+      h("h2", {}, "TextToText"),
       h(TextToText),
       // 老的是 text 新的是 array
-      h('h2', {}, 'TextToArray'),
+      h("h2", {}, "TextToArray"),
       h(TextToArray),
       //   // 老的是 array 新的是 array
-      h('h2', {}, 'ArrayToArray'),
+      h("h2", {}, "ArrayToArray"),
       h(ArrayToArray),
     ]);
   },

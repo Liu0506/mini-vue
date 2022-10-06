@@ -18,8 +18,8 @@ function patchProp(el: HTMLElement, key, prevVal, nextVal) {
   }
 }
 
-function insert(el: HTMLElement, container: HTMLElement) {
-  container.append(el);
+function insert(child: HTMLElement, parent: HTMLElement, anchor) {
+  parent.insertBefore(child, anchor || null);
 }
 
 function setElementText(el: HTMLElement, text: string) {
