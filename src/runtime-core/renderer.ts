@@ -147,7 +147,50 @@ export function createRenderer(options: createRendererIterFace) {
         i++;
       }
     } else {
+      console.log("两边对比完，开始对比中间部分");
       // 两边对比完，开始对比中间部分
+      let s1 = i;
+      let s2 = i;
+
+      const toBePatched = e2 - s2 + 1; // 中间部分需要对比的个数
+      let patched = 0; // 对比的变化下标
+      const keyToNewIndexMap = new Map(); // 将新的vnode的key和位置下标，保存到映射表，用于新旧vnode对比
+
+      // 遍历新的
+      for (let j = s2; j <= e2; j++) {
+        const nextChild = c2[j];
+        keyToNewIndexMap.set(nextChild.key, j);
+      }
+
+      for (let j = s1; j <= e1; j++) {
+        const prevChild = c1[j];
+
+        // 如果已经对比完了，或不需要对比，直接删除旧元素
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el);
+          continue;
+        }
+
+        let newIndex;
+        if (prevChild.key != null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key);
+        } else {
+          for (let k = 0; k <= e2; k++) {
+            if (isSomeVNodeType(prevChild, c2[k])) {
+              newIndex = k;
+              break;
+            }
+          }
+        }
+
+        if (newIndex === undefined) {
+          // 没有在新的 vnode 里面，也直接删除
+          hostRemove(prevChild.el);
+        } else {
+          patch(prevChild, c2[newIndex], container, parentComponent, null);
+          patched++;
+        }
+      }
     }
   }
 
