@@ -50,14 +50,11 @@ export function createRenderer(options: createRendererIterFace) {
   }
 
   function patchElement(n1, n2, container, parentComponent, anchor) {
-    console.log("patchElement");
-    console.log("container :>> ", container);
     // 对比 props
     const oldProps = n1.props || EMPTY_OBJ;
     const newProps = n2.props || EMPTY_OBJ;
     const el = (n2.el = n1.el);
-    console.log("n1", n1);
-    console.log("n2", n2);
+
     patchChildren(n1, n2, el, parentComponent, anchor);
     patchProps(el, oldProps, newProps);
   }
@@ -128,7 +125,6 @@ export function createRenderer(options: createRendererIterFace) {
     }
 
     // 根据对比结果 i, e1, e2 判断元素怎么操作
-    console.log(i, e1, e2);
 
     // 3. 新的节点比老的多，创建节点
     if (i > e1 && i <= e2) {
@@ -152,9 +148,17 @@ export function createRenderer(options: createRendererIterFace) {
       let s1 = i;
       let s2 = i;
 
+      const l2 = c2.length;
       const toBePatched = e2 - s2 + 1; // 中间部分需要对比的个数
       let patched = 0; // 对比的变化下标
       const keyToNewIndexMap = new Map(); // 将新的vnode的key和位置下标，保存到映射表，用于新旧vnode对比
+
+      let moved = false;
+      let maxNewIndexSoFar = 0;
+      // 初始化为 0 , 后面处理的时候 如果发现是 0 的话，那么就说明新值在老的里面不存在
+      const newIndexToOldIndexMap: (number | boolean)[] = new Array(
+        toBePatched
+      ).fill(0);
 
       // 遍历新的
       for (let j = s2; j <= e2; j++) {
@@ -187,8 +191,40 @@ export function createRenderer(options: createRendererIterFace) {
           // 没有在新的 vnode 里面，也直接删除
           hostRemove(prevChild.el);
         } else {
+          console.log("新老节点都存在");
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex;
+          } else {
+            // 优化，如果排序一直是从小到大，就不用移动了（false）
+            moved = true;
+          }
+
+          // i + 1 是因为 i 有可能是0 (0 的话会被认为新节点在老的节点中不存在)
+          newIndexToOldIndexMap[newIndex - s2] = j + 1;
+          // 对比其中的重复项每一项，并且将 c1 的 el 赋值给 c2
           patch(prevChild, c2[newIndex], container, parentComponent, null);
           patched++;
+        }
+      }
+
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : [];
+
+      // 倒序循环
+      let j = increasingNewIndexSequence.length - 1;
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = i + s2;
+        const nextChild = c2[nextIndex];
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor);
+        } else if (moved) {
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            hostInsert(nextChild.el, container, anchor);
+          } else {
+            j--;
+          }
         }
       }
     }
@@ -319,4 +355,48 @@ export function createRenderer(options: createRendererIterFace) {
   return {
     createApp: createAppApi(render),
   };
+}
+
+/**
+ *  最长递增子序列（LIS）
+ * */
+function getSequence(arr) {
+  const p = arr.slice();
+  const result = [0];
+  let i, j, u, v, c;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== 0) {
+      j = result[result.length - 1];
+      if (arr[j] < arrI) {
+        p[i] = j;
+        result.push(i);
+        continue;
+      }
+      u = 0;
+      v = result.length - 1;
+      while (u < v) {
+        c = (u + v) >> 1;
+        if (arr[result[c]] < arrI) {
+          u = c + 1;
+        } else {
+          v = c;
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1];
+        }
+        result[u] = i;
+      }
+    }
+  }
+  u = result.length;
+  v = result[u - 1];
+  while (u-- > 0) {
+    result[u] = v;
+    v = p[v];
+  }
+  return result;
 }
