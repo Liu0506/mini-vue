@@ -8,6 +8,7 @@ import { initSlots } from "./componentSlots";
 export function createComponentInstance(vnode, parent) {
   const component = {
     vnode,
+    next: null, // 最新的vnode
     type: vnode.type,
     setupState: {},
     props: {},

@@ -3,6 +3,7 @@ import { createRendererIterFace } from "../runtime-dom";
 import { EMPTY_OBJ } from "../shared";
 import { ShapeFlags } from "../shared/shapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { shouldUpdateComponent } from "./componentUpdateUtils";
 import { createAppApi } from "./createApp";
 import { Fragment, isSomeVNodeType, Text } from "./vnode";
 
@@ -297,11 +298,29 @@ export function createRenderer(options: createRendererIterFace) {
     parentComponent,
     anchor
   ) {
-    mountComponent(n2, container, parentComponent, anchor);
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor);
+    } else {
+      updateComponent(n1, n2);
+    }
+  }
+
+  function updateComponent(n1, n2) {
+    const instance = (n2.component = n1.component);
+    if (shouldUpdateComponent(n1, n2)) {
+      instance.next = n2;
+      instance.update();
+    } else {
+      n2.el = n1.el;
+      instance.vnode = n2;
+    }
   }
 
   function mountComponent(initnalVnode, container, parentComponent, anchor) {
-    const instance = createComponentInstance(initnalVnode, parentComponent);
+    const instance = (initnalVnode.component = createComponentInstance(
+      initnalVnode,
+      parentComponent
+    ));
 
     setupComponent(instance);
 
@@ -309,7 +328,7 @@ export function createRenderer(options: createRendererIterFace) {
   }
 
   function setupRenderEffect(instance, initnalVnode, container, anchor) {
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         console.log("初始化");
 
@@ -324,6 +343,13 @@ export function createRenderer(options: createRendererIterFace) {
         instance.isMounted = true;
       } else {
         console.log("更新");
+
+        // 更新组件逻辑 vnode 是旧的 vnode，next 是最新更新的 vnode。
+        const { next, vnode } = instance;
+        if (next) {
+          next.el = vnode.el;
+          updateComponentPreRender(instance, next);
+        }
 
         const { proxy } = instance;
         const subTree = instance.render.call(proxy);
@@ -355,6 +381,13 @@ export function createRenderer(options: createRendererIterFace) {
   return {
     createApp: createAppApi(render),
   };
+}
+
+function updateComponentPreRender(instance: any, nextVNode: any) {
+  console.log("instance, nextVNode", instance, nextVNode);
+  instance.vnode = nextVNode;
+  instance.next = null;
+  instance.props = nextVNode.props;
 }
 
 /**
