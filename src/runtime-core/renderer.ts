@@ -5,6 +5,7 @@ import { ShapeFlags } from "../shared/shapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { shouldUpdateComponent } from "./componentUpdateUtils";
 import { createAppApi } from "./createApp";
+import { queueJobs } from "./scheduler";
 import { Fragment, isSomeVNodeType, Text } from "./vnode";
 
 export function createRenderer(options: createRendererIterFace) {
@@ -328,39 +329,46 @@ export function createRenderer(options: createRendererIterFace) {
   }
 
   function setupRenderEffect(instance, initnalVnode, container, anchor) {
-    instance.update = effect(() => {
-      if (!instance.isMounted) {
-        console.log("初始化");
+    instance.update = effect(
+      () => {
+        if (!instance.isMounted) {
+          console.log("初始化");
 
-        const { proxy } = instance;
-        const subTree = instance.render.call(proxy);
-        instance.subTree = subTree;
+          const { proxy } = instance;
+          const subTree = instance.render.call(proxy);
+          instance.subTree = subTree;
 
-        // vnode -> patch
-        // vnode -> element -> mountElement
-        patch(null, subTree, container, instance, anchor);
-        initnalVnode.el = subTree.el;
-        instance.isMounted = true;
-      } else {
-        console.log("更新");
+          // vnode -> patch
+          // vnode -> element -> mountElement
+          patch(null, subTree, container, instance, anchor);
+          initnalVnode.el = subTree.el;
+          instance.isMounted = true;
+        } else {
+          console.log("更新");
 
-        // 更新组件逻辑 vnode 是旧的 vnode，next 是最新更新的 vnode。
-        const { next, vnode } = instance;
-        if (next) {
-          next.el = vnode.el;
-          updateComponentPreRender(instance, next);
+          // 更新组件逻辑 vnode 是旧的 vnode，next 是最新更新的 vnode。
+          const { next, vnode } = instance;
+          if (next) {
+            next.el = vnode.el;
+            updateComponentPreRender(instance, next);
+          }
+
+          const { proxy } = instance;
+          const subTree = instance.render.call(proxy);
+          const prevSubTree = instance.subTree;
+          instance.subTree = subTree;
+
+          // vnode -> patch
+          // vnode -> element -> mountElement
+          patch(prevSubTree, subTree, container, instance, anchor);
         }
-
-        const { proxy } = instance;
-        const subTree = instance.render.call(proxy);
-        const prevSubTree = instance.subTree;
-        instance.subTree = subTree;
-
-        // vnode -> patch
-        // vnode -> element -> mountElement
-        patch(prevSubTree, subTree, container, instance, anchor);
+      },
+      {
+        scheduler() {
+          queueJobs(instance.update);
+        },
       }
-    });
+    );
   }
 
   function processFragment(
