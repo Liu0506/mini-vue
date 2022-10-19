@@ -26,6 +26,8 @@ function parseChildren(context): any {
     if (/[a-z]/i.test(context.soruce[1])) {
       node = parseElement(context);
     }
+  } else {
+    node = parseText(context);
   }
   nodes.push(node);
 
@@ -80,6 +82,16 @@ function parseTag(context: any, type: TagType) {
   return {
     type: NodeTypes.ELEMENT,
     tag,
+  };
+}
+
+function parseText(context: any): any {
+  const content = context.soruce.slice(0, context.soruce.length);
+  advanceBy(context, content.length);
+
+  return {
+    type: NodeTypes.TEXT,
+    content,
   };
 }
 
