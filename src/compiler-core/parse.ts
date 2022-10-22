@@ -7,29 +7,31 @@ const enum TagType {
 
 export function baseParse(content: string) {
   const ctx = createParserContext(content);
-  return createRoot(parseChildren(ctx));
+  return createRoot(parseChildren(ctx, []));
 }
 
 function createParserContext(content: string) {
   return {
-    soruce: content,
+    source: content,
   };
 }
 
-function parseChildren(context): any {
+function parseChildren(context, ancestors): any {
   const nodes: any = [];
 
-  let node;
-  if (context.soruce.startsWith("{{")) {
-    node = parseInterpolation(context);
-  } else if (context.soruce[0] === "<") {
-    if (/[a-z]/i.test(context.soruce[1])) {
-      node = parseElement(context);
+  while (!isEnd(context, ancestors)) {
+    let node;
+    if (context.source.startsWith("{{")) {
+      node = parseInterpolation(context);
+    } else if (context.source[0] === "<") {
+      if (/[a-z]/i.test(context.source[1])) {
+        node = parseElement(context, ancestors);
+      }
+    } else {
+      node = parseText(context);
     }
-  } else {
-    node = parseText(context);
+    nodes.push(node);
   }
-  nodes.push(node);
 
   return nodes;
 }
@@ -38,7 +40,7 @@ function parseInterpolation(context) {
   const openDelimiter = "{{";
   const closeDelimiter = "}}";
 
-  const closeIndex = context.soruce.indexOf(
+  const closeIndex = context.source.indexOf(
     closeDelimiter,
     openDelimiter.length
   );
@@ -47,10 +49,10 @@ function parseInterpolation(context) {
 
   const rawContentLength = closeIndex - openDelimiter.length;
 
-  const rawContent = context.soruce.slice(0, rawContentLength);
+  const rawContent = parseTextData(context, rawContentLength);
   const content = rawContent.trim();
 
-  advanceBy(context, rawContentLength + closeDelimiter.length);
+  advanceBy(context, closeDelimiter.length);
 
   return {
     type: NodeTypes.INTERPOLATION,
@@ -61,17 +63,24 @@ function parseInterpolation(context) {
   };
 }
 
-function parseElement(context: any) {
+function parseElement(context: any, ancestors) {
   // 1. 解析 tag
-  const element = parseTag(context, TagType.Start);
+  const element: any = parseTag(context, TagType.Start);
+  ancestors.push(element)
+  element.children = parseChildren(context, ancestors);
+  ancestors.pop();
 
-  parseTag(context, TagType.End);
+  if (startsWithEndTagOpen(context.source, element.tag)) {
+    parseTag(context, TagType.End);
+  }else {
+    throw new Error(`缺少结束标签:${element.tag}`);
+  }
 
   return element;
 }
 
 function parseTag(context: any, type: TagType) {
-  const match = /^<\/?([a-z]+)/i.exec(context.soruce) as RegExpExecArray;
+  const match = /^<\/?([a-z]+)/i.exec(context.source) as RegExpExecArray;
   let tag = match[1];
   advanceBy(context, match[0].length);
   advanceBy(context, 1);
@@ -86,8 +95,16 @@ function parseTag(context: any, type: TagType) {
 }
 
 function parseText(context: any): any {
-  const content = context.soruce.slice(0, context.soruce.length);
-  advanceBy(context, content.length);
+  let endIndex = context.source.length;
+  const endTokens = ["<", "{{"];
+
+  for (let i = 0; i < endTokens.length; i++) {
+    const index = context.source.indexOf(endTokens[i]);
+    if (index !== -1 && endIndex > index) {
+      endIndex = index;
+    }
+  }
+  const content = parseTextData(context, endIndex);
 
   return {
     type: NodeTypes.TEXT,
@@ -95,12 +112,39 @@ function parseText(context: any): any {
   };
 }
 
+function parseTextData(context: any, length: number) {
+  const content = context.source.slice(0, length);
+  advanceBy(context, length);
+  return content;
+}
+
 function advanceBy(context: any, length: number) {
-  context.soruce = context.soruce.slice(length);
+  context.source = context.source.slice(length);
 }
 
 function createRoot(children) {
   return {
     children,
   };
+}
+
+function isEnd(context, ancestors: any[]) {
+  const s = context.source
+  if (s.startsWith('</')) {
+    for (let i = ancestors.length - 1; i>=0; i--) {
+      const tag = ancestors[i].tag;
+      if (startsWithEndTagOpen(s, tag)) {
+        return true
+      }
+     }
+  }
+
+  return !s;
+}
+
+function startsWithEndTagOpen(source, tag) {
+  return (
+    source.startsWith("</") &&
+    source.slice(2, 2 + tag.length).toLowerCase() === tag.toLowerCase()
+  );
 }
