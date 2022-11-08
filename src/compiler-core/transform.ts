@@ -1,14 +1,23 @@
+import { NodeTypes } from "./ast";
+import { TO_DISPLAY_STRING } from "./runtimeHelpers";
+
 export function transform(root, options = {}) {
   const context = createTransformContext(root, options);
   traverseNode(root, context);
   createRootCodegen(root);
+  root.helpers = Array.from(context.helpers);
 }
 
 function createTransformContext(root: any, options: any) {
-  return {
+  const context = {
     root,
     nodeTransforms: options.nodeTransforms || [],
+    helpers: new Set(),
+    helper(importModule) {
+      context.helpers.add(importModule);
+    },
   };
+  return context;
 }
 
 /**
@@ -16,7 +25,7 @@ function createTransformContext(root: any, options: any) {
  */
 function traverseNode(node, context) {
   traversePlugin(context, node);
-  traverseChildren(node, context);
+  traverseImportModuleKey(node, context);
 }
 
 /**
@@ -35,13 +44,29 @@ function traversePlugin(context: any, node: any) {
  */
 function traverseChildren(node: any, context: any) {
   const { children } = node;
-  if (children) {
-    for (const child of children) {
-      traverseNode(child, context);
-    }
+  for (const child of children) {
+    traverseNode(child, context);
   }
 }
 
 function createRootCodegen(root: any) {
   root.codegenNode = root.children[0];
+}
+
+/**
+ * 引入的模块
+ * 比如 const { toDisplayString: _toDisplayString } = Vue 中的 toDisplayString
+ */
+function traverseImportModuleKey(node: any, context: any) {
+  switch (node.type) {
+    case NodeTypes.INTERPOLATION:
+      context.helper(TO_DISPLAY_STRING);
+      break;
+    case NodeTypes.ROOT:
+    case NodeTypes.ELEMENT:
+      traverseChildren(node, context);
+      break;
+    default:
+      break;
+  }
 }
