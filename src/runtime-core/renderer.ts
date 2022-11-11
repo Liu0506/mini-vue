@@ -335,7 +335,7 @@ export function createRenderer(options: createRendererIterFace) {
           console.log("初始化");
 
           const { proxy } = instance;
-          const subTree = instance.render.call(proxy);
+          const subTree = instance.render.call(proxy, proxy);
           instance.subTree = subTree;
 
           // vnode -> patch
@@ -354,7 +354,7 @@ export function createRenderer(options: createRendererIterFace) {
           }
 
           const { proxy } = instance;
-          const subTree = instance.render.call(proxy);
+          const subTree = instance.render.call(proxy, proxy);
           const prevSubTree = instance.subTree;
           instance.subTree = subTree;
 
