@@ -8,6 +8,8 @@ export const isObject = (val: unknown): val is Record<any, any> =>
 export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue);
 
+export const isString = (s) => typeof s === "string";
+
 /**
  * 横杠转换成驼峰命名
  * @param str 转换的字符串
