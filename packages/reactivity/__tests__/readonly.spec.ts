@@ -2,7 +2,7 @@ import { isProxy, isReactive, isReadonly, reactive, readonly } from "../src/reac
 
 describe("readonly", () => {
   it("readonly fn", () => {
-    console.warn = jest.fn();
+    console.warn = vi.fn();
     const original = { foo: 1 };
     const obj = readonly(original);
     expect(original).not.toBe(obj);
@@ -14,7 +14,7 @@ describe("readonly", () => {
 
   it("readonly warn", () => {
     // 监听警告函数是否被调用了
-    console.warn = jest.fn();
+    console.warn = vi.fn();
 
     const original = { foo: 1 };
     const obj = readonly(original);
@@ -36,7 +36,7 @@ describe("readonly", () => {
   });
 
   it("readonly/deep", () => {
-    console.warn = jest.fn();
+    console.warn = vi.fn();
 
     const original = {
       foo: {

@@ -31,7 +31,7 @@ describe("effect", () => {
   it("effect/scheduler", () => {
     let dummy;
     let run: any;
-    const scheduler = jest.fn(() => {
+    const scheduler = vi.fn(() => {
       run = runner;
     });
     const obj = reactive({ foo: 1 });
