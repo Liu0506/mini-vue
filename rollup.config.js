@@ -5,7 +5,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import sourcemaps from "rollup-plugin-sourcemaps";
 
 export default {
-  input: "src/index.ts",
+  input: "packages/vue/index.ts",
   output: [
     {
       format: "cjs",
