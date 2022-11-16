@@ -9,4 +9,4 @@ export {
   isProxy,
 } from "./src/reactive";
 
-export {effect, stop} from "./src/effect"
+export { effect, stop, ReactiveEffect } from "./src/effect";
